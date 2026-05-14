@@ -511,6 +511,7 @@ const CSS = `
     flex-direction: column;
     overflow: hidden;
     background: var(--bg-main);
+    overflow-x: hidden;
   }
   .chat-header {
     padding: 14px 22px;
@@ -519,6 +520,12 @@ const CSS = `
     align-items: center;
     gap: 12px;
     background: var(--bg-sidebar);
+  }
+  @media (max-width: 768px) {
+    .chat-header {
+      padding: 12px 16px;
+      gap: 8px;
+    }
   }
   .chat-header-info { flex: 1; }
   .chat-header-name {
@@ -551,10 +558,17 @@ const CSS = `
   .messages-wrap {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 24px 24px 10px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
+  }
+  @media (max-width: 768px) {
+    .messages-wrap {
+      padding: 16px 16px 8px;
+      gap: 6px;
+    }
   }
   .messages-wrap::-webkit-scrollbar { width: 3px; }
   .messages-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
@@ -580,9 +594,15 @@ const CSS = `
     align-items: flex-start;
     justify-content: flex-start;
     gap: 8px;
-    margin-bottom: 3px;
+    margin-bottom: 6px;
     width: 100%;
     min-width: 0;
+  }
+  @media (max-width: 768px) {
+    .msg-row {
+      gap: 6px;
+      margin-bottom: 4px;
+    }
   }
   .msg-row.sent { justify-content: flex-end; }
   .msg-row.sent .msg-avatar { display: none; }
@@ -592,6 +612,11 @@ const CSS = `
     align-items: flex-start;
     min-width: 0;
     max-width: calc(100% - 40px);
+  }
+  @media (max-width: 768px) {
+    .msg-row > div {
+      max-width: calc(100% - 32px);
+    }
   }
   .msg-row.sent > div {
     align-items: flex-end;
@@ -608,23 +633,39 @@ const CSS = `
     font-family: var(--font-brand);
     flex-shrink: 0;
   }
+  @media (max-width: 768px) {
+    .msg-avatar {
+      width: 24px;
+      height: 24px;
+      font-size: 10px;
+    }
+  }
   .msg-bubble {
     display: inline-flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: flex-start;
     width: auto;
-    max-width: 72%;
+    max-width: min(400px, 70vw);
     padding: 10px 14px;
     border-radius: var(--radius-lg);
     font-size: 14px;
-    line-height: 1.6;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: normal;
-    word-wrap: break-word;
-    hyphens: none;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
     text-align: left;
     position: relative;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  @media (max-width: 768px) {
+    .msg-bubble {
+      max-width: min(300px, 80vw);
+      padding: 8px 12px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
   }
   .msg-row.recv .msg-bubble {
     background: var(--recv-bg);
@@ -646,22 +687,112 @@ const CSS = `
     align-items: center;
     gap: 4px;
   }
+  @media (max-width: 768px) {
+    .msg-time {
+      font-size: 9px;
+      margin-top: 3px;
+    }
+  }
   .msg-row.sent .msg-time { justify-content: flex-end; }
   .check-icon { color: var(--accent); font-size: 12px; }
-  .msg-img {
-    width: 200px;
-    height: 140px;
-    border-radius: var(--radius-md);
-    object-fit: cover;
-    display: block;
-    margin-bottom: 4px;
-    background: var(--bg-surface2);
+  .media-placeholder {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 8px;
     color: var(--text-muted);
     font-size: 12px;
+  }
+  .code-message {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .code-language {
+    font-weight: 600;
+  }
+  .code-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .code-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+  .code-btn:hover {
+    color: var(--accent);
+  }
+  .code-block {
+    background: var(--bg-surface2);
     border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin: 0;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+  @media (max-width: 768px) {
+    .code-block {
+      padding: 8px;
+      font-size: 12px;
+    }
+  }
+  .code-output {
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+  .output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .output-status {
+    font-weight: 600;
+  }
+  .output-status.success {
+    color: var(--status-online);
+  }
+  .output-status.error {
+    color: var(--danger);
+  }
+  .output-content {
+    background: var(--bg-surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    margin: 0;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre;
+    word-break: break-all;
+    overflow-wrap: break-word;
+  }
+  @media (max-width: 768px) {
+    .output-content {
+      padding: 6px;
+      font-size: 11px;
+    }
   }
   .typing-indicator {
     display: flex;
@@ -670,6 +801,13 @@ const CSS = `
     padding: 8px 0 14px;
     color: var(--text-secondary);
     font-size: 13px;
+  }
+  @media (max-width: 768px) {
+    .typing-indicator {
+      padding: 6px 0 10px;
+      font-size: 12px;
+      gap: 6px;
+    }
   }
   .typing-dots { display: flex; gap: 3px; }
   .typing-dots span {
@@ -693,6 +831,12 @@ const CSS = `
     gap: 10px;
     background: var(--bg-sidebar);
   }
+  @media (max-width: 768px) {
+    .input-area {
+      padding: 12px 16px 16px;
+      gap: 8px;
+    }
+  }
   .input-box {
     flex: 1;
     background: var(--bg-input);
@@ -703,6 +847,12 @@ const CSS = `
     align-items: center;
     gap: 10px;
     transition: border-color 0.2s;
+  }
+  @media (max-width: 768px) {
+    .input-box {
+      padding: 9px 12px;
+      gap: 8px;
+    }
   }
   .input-box:focus-within { border-color: var(--border-accent); }
   .input-box textarea {
@@ -717,6 +867,12 @@ const CSS = `
     max-height: 120px;
     line-height: 1.5;
   }
+  @media (max-width: 768px) {
+    .input-box textarea {
+      font-size: 13px;
+      max-height: 100px;
+    }
+  }
   .input-box textarea::placeholder { color: var(--text-muted); }
   .input-actions { display: flex; gap: 4px; }
   .attach-btn {
@@ -729,6 +885,12 @@ const CSS = `
     transition: color 0.15s;
     display: flex;
     align-items: center;
+  }
+  @media (max-width: 768px) {
+    .attach-btn {
+      font-size: 16px;
+      padding: 3px;
+    }
   }
   .attach-btn:hover { color: var(--accent); }
   .send-btn {
@@ -746,15 +908,23 @@ const CSS = `
     transition: opacity 0.2s, transform 0.1s;
     flex-shrink: 0;
   }
+  @media (max-width: 768px) {
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
+    }
+  }
   .send-btn:hover { opacity: 0.9; }
   .send-btn:active { transform: scale(0.93); }
 
   .profile-action-btn {
-    min-width: 140px;
+    min-width: 120px;
     width: auto;
-    min-height: 44px;
-    border-radius: 16px;
-    padding: 0 18px;
+    max-width: 260px;
+    min-height: 40px;
+    border-radius: 14px;
+    padding: 0 16px;
     font-size: 14px;
     font-weight: 700;
     display: inline-flex;
@@ -763,6 +933,10 @@ const CSS = `
     border: none;
     cursor: pointer;
     transition: opacity 0.2s, transform 0.1s;
+  }
+  .profile-submit-row .profile-action-btn {
+    flex: 0 1 auto;
+    width: auto;
   }
   .profile-action-btn:hover { opacity: 0.9; }
   .profile-action-btn:active { transform: scale(0.98); }
@@ -925,6 +1099,44 @@ const CSS = `
     .input-area { padding: 12px 14px; }
     .input-box { padding: 10px 12px; }
     .send-btn { width: 42px; height: 42px; }
+    .profile-card {
+      padding: 16px;
+      gap: 14px;
+    }
+    .profile-top {
+      gap: 12px;
+    }
+    .profile-avatar {
+      width: 60px;
+      height: 60px;
+      font-size: 18px;
+    }
+    .profile-summary .profile-name { font-size: 17px; }
+    .profile-summary .profile-username { font-size: 12px; }
+    .profile-section {
+      padding: 14px;
+      gap: 12px;
+      border-radius: 16px;
+    }
+    .profile-section h3 { font-size: 13px; }
+    .profile-section p { line-height: 1.5; }
+    .profile-field-grid { gap: 12px; }
+    .profile-submit-row {
+      gap: 8px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .profile-submit-row .profile-action-btn {
+      width: auto;
+      max-width: 260px;
+      min-height: 38px;
+      padding: 0 14px;
+      font-size: 13px;
+      margin: 0 auto;
+    }
   }
 
   /* ---- EMPTY STATE ---- */
@@ -1043,98 +1255,6 @@ const CSS = `
   .nav-tab i { font-size: 17px; }
   .nav-tab.active { color: var(--accent); background: var(--accent-dim2); }
   .nav-tab:hover:not(.active) { background: var(--bg-hover); color: var(--text-primary); }
-
-  /* ---- CODE MESSAGES ---- */
-  .code-message {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-width: 100%;
-  }
-  .code-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--text-muted);
-    padding: 4px 8px;
-    background: var(--bg-surface2);
-    border-radius: var(--radius-sm);
-  }
-  .code-language {
-    text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-  }
-  .code-actions {
-    display: flex;
-    gap: 4px;
-  }
-  .code-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .code-btn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-  .code-btn i { font-size: 14px; }
-  .code-block {
-    background: var(--bg-surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    margin: 0;
-    overflow-x: auto;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  .code-block code {
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-  }
-  .code-output {
-    background: var(--bg-surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-  }
-  .output-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 12px;
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-  }
-  .output-status {
-    font-size: 12px;
-  }
-  .output-status.success { color: var(--status-online); }
-  .output-status.error { color: var(--danger); }
-  .output-content {
-    padding: 8px 12px;
-    margin: 0;
-    background: var(--bg-main);
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-    font-size: 12px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-all;
-    max-height: 200px;
-    overflow-y: auto;
-  }
 
   /* ---- CODE INPUT MODAL ---- */
   .code-input-modal {
@@ -1840,10 +1960,7 @@ export default function App() {
           {[
             { key:"chats", icon:<TbMessages />, label:"Chats" },
             { key:"people", icon:<TbSearch />, label:"People" },
-            { key:"profile", icon:<TbUserSearch />, label:"Profile" },
             { key:"groups", icon:<TbUsers />, label:"Groups" },
-            { key:"calls", icon:<TbPhone />, label:"Calls" },
-            { key:"media", icon:<TbPhoto />, label:"Media" },
           ].map(n => (
             <button key={n.key} className={`nav-tab${navTab===n.key?" active":""}`} onClick={() => changeTab(n.key)}>
               {n.icon}
@@ -2009,11 +2126,11 @@ export default function App() {
                     )}
 
                     <div className="profile-submit-row">
-                      <button className="profile-action-btn btn-primary" onClick={() => setProfileMode('edit')}>Edit profile</button>
-                      <button className="profile-action-btn" style={{ background: 'var(--accent)', color: '#020f0c' }} onClick={() => setProfileMode('edit')}>Change password</button>
+                      <button className="profile-action-btn btn-primary" onClick={() => setProfileMode('editProfile')}>Edit profile</button>
+                      <button className="profile-action-btn" style={{ background: 'var(--accent)', color: '#020f0c' }} onClick={() => setProfileMode('changePassword')}>Change password</button>
                     </div>
                   </>
-                ) : (
+                ) : profileMode === 'editProfile' ? (
                   <>
                     <div className="profile-grid">
                       <section className="profile-section">
@@ -2034,7 +2151,22 @@ export default function App() {
                           </div>
                         </div>
                       </section>
+                    </div>
 
+                    {(profileError || profileMessage) && (
+                      <div className={profileError ? 'profile-error' : 'profile-message'}>
+                        {profileError || profileMessage}
+                      </div>
+                    )}
+
+                    <div className="profile-submit-row">
+                      <button className="profile-action-btn btn-primary" onClick={saveProfile}>Save profile</button>
+                      <button className="profile-action-btn" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)' }} onClick={() => setProfileMode('view')}>Cancel</button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="profile-grid">
                       <section className="profile-section">
                         <h3>Security</h3>
                         <p>Use your current password to set a new password for your account.</p>
@@ -2058,8 +2190,8 @@ export default function App() {
                     )}
 
                     <div className="profile-submit-row">
-                      <button className="profile-action-btn btn-primary" onClick={saveProfile}>Save profile</button>
-                      <button className="profile-action-btn" onClick={changePassword} style={{ background: 'var(--accent)', color: '#020f0c' }}>Update password</button>
+                      <button className="profile-action-btn" style={{ background: 'var(--accent)', color: '#020f0c' }} onClick={changePassword}>Update password</button>
+                      <button className="profile-action-btn" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)' }} onClick={() => setProfileMode('view')}>Cancel</button>
                     </div>
                   </>
                 )}
