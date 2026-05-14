@@ -125,6 +125,105 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('send_code_message', async ({ chatId, code, language }, callback) => {
+    if (!chatId || !code?.trim()) {
+      return callback?.({ status: 'error', error: 'Chat ID and code are required.' });
+    }
+
+    if (!language || !['javascript', 'python'].includes(language)) {
+      return callback?.({ status: 'error', error: 'Unsupported language. Supported: javascript, python' });
+    }
+
+    try {
+      const chat = await Chat.findById(chatId);
+      if (!chat || !chat.participants.some((id) => id.toString() === user._id.toString())) {
+        return callback?.({ status: 'error', error: 'Chat not found or access denied.' });
+      }
+
+      // Execute code using JDoodle API
+      const JDOODLE_CLIENT_ID = process.env.JDOODLE_CLIENT_ID;
+      const JDOODLE_CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET;
+      const JDOODLE_API_URL = 'https://api.jdoodle.com/v1/execute';
+      const LANGUAGE_IDS = { javascript: 'nodejs', python: 'python3' };
+
+      const executionResponse = await fetch(JDOODLE_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          script: code.trim(),
+          language: LANGUAGE_IDS[language],
+          versionIndex: '0',
+          clientId: JDOODLE_CLIENT_ID,
+          clientSecret: JDOODLE_CLIENT_SECRET,
+        }),
+      });
+
+      if (!executionResponse.ok) {
+        throw new Error('Failed to execute code');
+      }
+
+      const result = await executionResponse.json();
+
+      let output = '';
+      let executionStatus = 'success';
+
+      if (result.statusCode === 200) {
+        output = result.output || '';
+      } else {
+        output = result.output || 'Execution failed';
+        executionStatus = 'error';
+      }
+
+      const messageData = {
+        senderId: user._id,
+        senderName: user.name,
+        from: 'me',
+        text: `Code executed (${language})`,
+        type: 'code',
+        code: code.trim(),
+        language,
+        output: output.trim(),
+        executionStatus,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      chat.messages.push(messageData);
+      chat.lastMsg = messageData.text;
+      chat.time = messageData.time;
+      await chat.save();
+
+      const savedMessage = chat.messages[chat.messages.length - 1].toObject();
+      const outgoingMessage = { ...savedMessage, id: savedMessage._id.toString() };
+      const chatPayload = {
+        chatId: chat._id.toString(),
+        message: outgoingMessage,
+      };
+      const chatSummary = {
+        chatId: chat._id.toString(),
+        lastMsg: chat.lastMsg,
+        time: chat.time,
+      };
+
+      // Send live updates to all other participants
+      chat.participants.forEach((participantId) => {
+        if (participantId.toString() === user._id.toString()) return;
+        io.to(`user_${participantId.toString()}`).emit('message_received', chatPayload);
+        io.to(`user_${participantId.toString()}`).emit('chat_updated', chatSummary);
+      });
+
+      // Notify other sessions of the sender
+      socket.broadcast.to(`user_${user._id}`).emit('message_received', chatPayload);
+      socket.broadcast.to(`user_${user._id}`).emit('chat_updated', chatSummary);
+
+      callback?.({ status: 'ok', message: outgoingMessage });
+    } catch (error) {
+      console.error('Socket send CODE MESSAGE error:', error);
+      callback?.({ status: 'error', error: 'Failed to execute and send code.' });
+    }
+  });
+
   socket.on('search_user', async ({ username }, callback) => {
     if (!username || !username.trim()) {
       return callback?.({ status: 'error', error: 'Username search is required.' });

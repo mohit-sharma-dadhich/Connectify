@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { io } from "socket.io-client";
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github-dark.css';
+import { TbUsers, TbBrandGoogle, TbX, TbSearch, TbLogout, TbMenu, TbUserSearch, TbArrowLeft, TbMessages, TbPhone, TbVideo, TbInfoCircle, TbPhoto, TbCopy, TbChecks, TbPaperclip, TbMoodSmile, TbSend, TbCode, TbSun, TbMoon } from 'react-icons/tb';
 import { authAPI, chatAPI, userAPI, privateChatAPI, storage } from "./auth.js";
 
 const CSS = `
@@ -256,9 +259,15 @@ const CSS = `
     transition: all 0.18s;
   }
   .icon-btn i,
-  .send-btn i {
+  .send-btn i,
+  .icon-btn svg,
+  .send-btn svg,
+  .search-icon svg,
+  .code-btn svg {
     color: inherit;
     font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
   .icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
   .search-wrap {
@@ -1034,6 +1043,160 @@ const CSS = `
   .nav-tab i { font-size: 17px; }
   .nav-tab.active { color: var(--accent); background: var(--accent-dim2); }
   .nav-tab:hover:not(.active) { background: var(--bg-hover); color: var(--text-primary); }
+
+  /* ---- CODE MESSAGES ---- */
+  .code-message {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 100%;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    background: var(--bg-surface2);
+    border-radius: var(--radius-sm);
+  }
+  .code-language {
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .code-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .code-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .code-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+  .code-btn i { font-size: 14px; }
+  .code-block {
+    background: var(--bg-surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin: 0;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .code-block code {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  }
+  .code-output {
+    background: var(--bg-surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .output-status {
+    font-size: 12px;
+  }
+  .output-status.success { color: var(--status-online); }
+  .output-status.error { color: var(--danger); }
+  .output-content {
+    padding: 8px 12px;
+    margin: 0;
+    background: var(--bg-main);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  /* ---- CODE INPUT MODAL ---- */
+  .code-input-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .code-input-card {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .code-input-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .code-input-title {
+    font-family: var(--font-brand);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .code-language-select {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+  .code-input-area {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    min-height: 200px;
+    resize: vertical;
+    color: var(--text-primary);
+    width: 100%;
+    outline: none;
+  }
+  .code-input-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
 `;
 
 const AVATAR_COLORS = [
@@ -1067,7 +1230,7 @@ function Avatar({ contact, size = 42, radius = "50%" }) {
       fontFamily: "var(--font-brand)", fontSize: size * 0.35,
       fontWeight: 700, flexShrink: 0,
     }}>
-      {contact.isGroup ? <i className="ti ti-users" style={{ fontSize: size * 0.42 }} aria-hidden="true" /> : initials(contact.name)}
+      {contact.isGroup ? <TbUsers style={{ fontSize: size * 0.42 }} aria-hidden="true" /> : initials(contact.name)}
     </div>
   );
 }
@@ -1161,7 +1324,7 @@ function AuthScreen({ onLogin, onError }) {
         )}
         {tab === "login" && (
           <button className="btn-primary" style={{ background:"var(--bg-surface2)", color:"var(--text-primary)", border:"1px solid var(--border)", marginTop:0, fontFamily:"var(--font-body)", fontWeight:500 }} onClick={handle} disabled={loading}>
-            <i className="ti ti-brand-google" style={{ marginRight:8, fontSize:16, verticalAlign:-2 }} /> Continue with Google
+            <TbBrandGoogle style={{ marginRight:8, fontSize:16, verticalAlign:-2 }} aria-hidden="true" /> Continue with Google
           </button>
         )}
       </div>
@@ -1191,6 +1354,10 @@ export default function App() {
   const [profileMessage, setProfileMessage] = useState('');
   const [profileError, setProfileError] = useState('');
   const [profileMode, setProfileMode] = useState('view');
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeLanguage, setCodeLanguage] = useState("javascript");
+  const [executingCode, setExecutingCode] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const socketRef = useRef(null);
@@ -1418,6 +1585,13 @@ export default function App() {
     if (selectedId) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedId, messages]);
 
+  // Initialize highlight.js
+  useEffect(() => {
+    hljs.configure({
+      languages: ['javascript', 'python']
+    });
+  }, []);
+
   const handleProfileImageChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1516,6 +1690,57 @@ export default function App() {
     }
   };
 
+  const sendCodeMessage = async () => {
+    const code = codeInput.trim();
+    if (!code || !selectedId) return;
+    const socket = socketRef.current;
+    const token = storage.getToken();
+    if (!token) return;
+
+    setExecutingCode(true);
+    try {
+      if (socket?.connected) {
+        socket.emit('send_code_message', { chatId: selectedId, code, language: codeLanguage }, (response) => {
+          if (response?.status === 'ok') {
+            setMessages((prev) => ({
+              ...prev,
+              [selectedId]: [...(prev[selectedId] || []), response.message],
+            }));
+            setContacts((prev) => prev.map((chat) =>
+              chat._id === selectedId ? { ...chat, lastMsg: response.message.text, time: response.message.time, unread: 0 } : chat
+            ));
+            setCodeInput("");
+            setShowCodeInput(false);
+            setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+          } else {
+            const message = response?.error || 'Failed to execute code';
+            console.error('Socket send code error:', message);
+            showToast(message);
+          }
+          setExecutingCode(false);
+        });
+      } else {
+        // Fallback to HTTP API
+        const { message } = await chatAPI.executeCode(selectedId, code, codeLanguage, token);
+        setMessages((prev) => ({
+          ...prev,
+          [selectedId]: [...(prev[selectedId] || []), message],
+        }));
+        setContacts((prev) => prev.map((chat) =>
+          chat._id === selectedId ? { ...chat, lastMsg: message.text, time: message.time, unread: 0 } : chat
+        ));
+        setCodeInput("");
+        setShowCodeInput(false);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+        setExecutingCode(false);
+      }
+    } catch (err) {
+      console.error("Send code message error:", err.message);
+      showToast(err.message);
+      setExecutingCode(false);
+    }
+  };
+
   const onKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
@@ -1607,21 +1832,21 @@ export default function App() {
         <div className="sidebar-header">
           <span className="sidebar-brand">Connectify</span>
           <button className="mobile-menu-btn" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
-            <i className="ti ti-x" aria-hidden="true" />
+            <TbX aria-hidden="true" />
           </button>
         </div>
 
         <div className="sidebar-nav">
           {[
-            { key:"chats", icon:"ti-message-circle", label:"Chats" },
-            { key:"people", icon:"ti-search", label:"People" },
-            { key:"profile", icon:"ti-user", label:"Profile" },
-            { key:"groups", icon:"ti-users", label:"Groups" },
-            { key:"calls", icon:"ti-phone", label:"Calls" },
-            { key:"media", icon:"ti-photo", label:"Media" },
+            { key:"chats", icon:<TbMessages />, label:"Chats" },
+            { key:"people", icon:<TbSearch />, label:"People" },
+            { key:"profile", icon:<TbUserSearch />, label:"Profile" },
+            { key:"groups", icon:<TbUsers />, label:"Groups" },
+            { key:"calls", icon:<TbPhone />, label:"Calls" },
+            { key:"media", icon:<TbPhoto />, label:"Media" },
           ].map(n => (
             <button key={n.key} className={`nav-tab${navTab===n.key?" active":""}`} onClick={() => changeTab(n.key)}>
-              <i className={`ti ${n.icon}`} aria-hidden="true" />
+              {n.icon}
               {n.label}
             </button>
           ))}
@@ -1629,7 +1854,7 @@ export default function App() {
 
         <div className="search-wrap">
           <div className="search-input-wrap">
-            <i className="ti ti-search search-icon" aria-hidden="true" />
+            <TbSearch className="search-icon" aria-hidden="true" />
             <input placeholder="Search conversations..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
@@ -1664,7 +1889,7 @@ export default function App() {
           </div>
           <div className="sidebar-user-actions">
             <button className="icon-btn" onClick={(e) => { e.stopPropagation(); handleLogout(); setSelectedId(null); }}>
-              <i className="ti ti-logout" aria-hidden="true" />
+              <TbLogout aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -1677,7 +1902,7 @@ export default function App() {
           <>
             <div className="chat-header">
               <button className="mobile-menu-btn main-menu" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
-                <i className="ti ti-menu" aria-hidden="true" />
+                <TbMenu aria-hidden="true" />
               </button>
               <div className="chat-header-info">
                 <div className="chat-header-name">Find people</div>
@@ -1687,7 +1912,7 @@ export default function App() {
             <div className="messages-wrap" style={{ padding: '20px 24px', gap: 14 }}>
               <div className="search-wrap">
                 <div className="search-input-wrap" style={{ width: '100%' }}>
-                  <i className="ti ti-search search-icon" aria-hidden="true" />
+                  <TbSearch className="search-icon" aria-hidden="true" />
                   <input placeholder="Search username..." value={peopleSearch} onChange={e => searchUsers(e.target.value)} />
                 </div>
               </div>
@@ -1700,7 +1925,7 @@ export default function App() {
 
               {!peopleLoading && peopleSearch.trim() !== '' && peopleResults.length === 0 && (
                 <div className="empty-state" style={{ padding: '40px 0' }}>
-                  <i className="ti ti-user-search empty-icon" aria-hidden="true" style={{ fontSize:48, color:'var(--text-muted)' }} />
+                  <TbUserSearch className="empty-icon" aria-hidden="true" style={{ fontSize:48, color:'var(--text-muted)' }} />
                   <div className="empty-title">No users found</div>
                   <div className="empty-sub">Try another username or ask the person to register.</div>
                 </div>
@@ -1728,7 +1953,7 @@ export default function App() {
           <>
             <div className="chat-header">
               <button className="mobile-menu-btn main-menu" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
-                <i className="ti ti-menu" aria-hidden="true" />
+                <TbMenu aria-hidden="true" />
               </button>
               <div className="chat-header-info">
                 <div className="chat-header-name">Account profile</div>
@@ -1736,7 +1961,7 @@ export default function App() {
               </div>
               <div className="chat-header-actions">
                 <button className="icon-btn" title="Back to chats" onClick={() => changeTab('chats')}>
-                  <i className="ti ti-arrow-left" aria-hidden="true" />
+                  <TbArrowLeft aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -1841,7 +2066,7 @@ export default function App() {
 
                 <button className="theme-toggle" onClick={toggleTheme}>
                   <span>{theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}</span>
-                  <i className={`ti ${theme === 'dark' ? 'ti-sun' : 'ti-moon'}`} aria-hidden="true" />
+                  {theme === 'dark' ? <TbSun aria-hidden="true" /> : <TbMoon aria-hidden="true" />}
                 </button>
                 <button className="profile-action-btn" style={{ background: 'var(--danger)', color: '#fff' }} onClick={handleLogout}>
                   Logout
@@ -1851,7 +2076,7 @@ export default function App() {
           </>
         ) : !selected ? (
           <div className="empty-state">
-            <i className="ti ti-messages empty-icon" aria-hidden="true" style={{ fontSize:56, color:"var(--text-muted)" }} />
+            <TbMessages className="empty-icon" aria-hidden="true" style={{ fontSize:56, color:"var(--text-muted)" }} />
             <div className="empty-title">Select a conversation</div>
             <div className="empty-sub">Pick a chat from the sidebar to start messaging</div>
           </div>
@@ -1859,7 +2084,7 @@ export default function App() {
           <>
             <div className="chat-header">
               <button className="mobile-menu-btn main-menu" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
-                <i className="ti ti-menu" aria-hidden="true" />
+                <TbMenu aria-hidden="true" />
               </button>
               <div className="avatar-wrap">
                 <Avatar contact={selected} radius={selected.isGroup ? "13px" : "50%"} />
@@ -1877,13 +2102,13 @@ export default function App() {
               </div>
               <div className="chat-header-actions">
                 <button className="icon-btn" title="Voice Call" onClick={() => showToast("Voice calling coming soon!")}>
-                  <i className="ti ti-phone" aria-hidden="true" />
+                  <TbPhone aria-hidden="true" />
                 </button>
                 <button className="icon-btn" title="Video Call" onClick={() => showToast("Video calling coming soon!")}>
-                  <i className="ti ti-video" aria-hidden="true" />
+                  <TbVideo aria-hidden="true" />
                 </button>
                 <button className="icon-btn" title="Info">
-                  <i className="ti ti-info-circle" aria-hidden="true" />
+                  <TbInfoCircle aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -1906,15 +2131,56 @@ export default function App() {
                     <div className="msg-bubble">
                       {msg.type === "image" && (
                         <div className="media-placeholder">
-                          <i className="ti ti-photo" aria-hidden="true" />
+                          <TbPhoto aria-hidden="true" />
                           <span>{msg.caption || "image.png"}</span>
                         </div>
                       )}
-                      {msg.text && msg.text}
+                      {msg.type === "code" ? (
+                        <div className="code-message">
+                          <div className="code-header">
+                            <span className="code-language">{msg.language}</span>
+                            <div className="code-actions">
+                              <button 
+                                className="code-btn copy-btn" 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(msg.code);
+                                  showToast("Code copied to clipboard!");
+                                }}
+                                title="Copy code"
+                              >
+                                <TbCopy aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
+                          <pre className="code-block">
+                            <code 
+                              className={`language-${msg.language}`}
+                              dangerouslySetInnerHTML={{ 
+                                __html: hljs.highlight(msg.code, { language: msg.language }).value 
+                              }}
+                            />
+                          </pre>
+                          {msg.output && (
+                            <div className="code-output">
+                              <div className="output-header">
+                                <span>Output</span>
+                                <span className={`output-status ${msg.executionStatus}`}>
+                                  {msg.executionStatus === 'success' ? '✓' : '✗'}
+                                </span>
+                              </div>
+                              <pre className="output-content">
+                                <code>{msg.output}</code>
+                              </pre>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        msg.text && msg.text
+                      )}
                     </div>
                     <div className="msg-time">
                       {msg.time}
-                      {isSent && <i className="ti ti-checks check-icon" aria-hidden="true" />}
+                      {isSent && <TbChecks className="check-icon" aria-hidden="true" />}
                     </div>
                   </div>
                 </div>
@@ -1934,10 +2200,13 @@ export default function App() {
               <div className="input-box">
                 <div className="input-actions">
                   <button className="attach-btn" title="Attach file" onClick={() => showToast("File sharing — click to attach")}>
-                    <i className="ti ti-paperclip" aria-hidden="true" />
+                    <TbPaperclip aria-hidden="true" />
                   </button>
                   <button className="attach-btn" title="Send photo" onClick={() => showToast("Photo sharing coming soon!")}>
-                    <i className="ti ti-photo" aria-hidden="true" />
+                    <TbPhoto aria-hidden="true" />
+                  </button>
+                  <button className="attach-btn" title="Send code" onClick={() => setShowCodeInput(true)}>
+                    <TbCode aria-hidden="true" />
                   </button>
                 </div>
                 <textarea
@@ -1950,16 +2219,58 @@ export default function App() {
                   style={{ minHeight:22 }}
                 />
                 <button className="attach-btn" title="Emoji">
-                  <i className="ti ti-mood-smile" aria-hidden="true" />
+                  <TbMoodSmile aria-hidden="true" />
                 </button>
               </div>
               <button className="send-btn" onClick={sendMessage} title="Send">
-                <i className="ti ti-send-2" aria-hidden="true" />
+                <TbSend aria-hidden="true" />
               </button>
             </div>
           </>
         )}
       </div>
+
+      {/* Code Input Modal */}
+      {showCodeInput && (
+        <div className="code-input-modal" onClick={() => setShowCodeInput(false)}>
+          <div className="code-input-card" onClick={e => e.stopPropagation()}>
+            <div className="code-input-header">
+              <div className="code-input-title">Send Code</div>
+              <select 
+                className="code-language-select"
+                value={codeLanguage}
+                onChange={e => setCodeLanguage(e.target.value)}
+              >
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+              </select>
+            </div>
+            <textarea
+              className="code-input-area"
+              placeholder={`Enter your ${codeLanguage} code here...`}
+              value={codeInput}
+              onChange={e => setCodeInput(e.target.value)}
+              disabled={executingCode}
+            />
+            <div className="code-input-actions">
+              <button 
+                className="profile-action-btn" 
+                onClick={() => setShowCodeInput(false)}
+                style={{ background: 'var(--bg-surface2)', color: 'var(--text-primary)' }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="profile-action-btn btn-primary" 
+                onClick={sendCodeMessage}
+                disabled={!codeInput.trim() || executingCode}
+              >
+                {executingCode ? 'Running...' : 'Run Code'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

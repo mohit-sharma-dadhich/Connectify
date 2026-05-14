@@ -7,6 +7,17 @@ const router = express.Router();
 
 const formatTime = (date = new Date()) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+// JDoodle API configuration
+const JDOODLE_CLIENT_ID = process.env.JDOODLE_CLIENT_ID;
+const JDOODLE_CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET;
+const JDOODLE_API_URL = 'https://api.jdoodle.com/v1/execute';
+
+// Language ID mapping for JDoodle
+const LANGUAGE_IDS = {
+  javascript: 'nodejs',  // Node.js
+  python: 'python3',     // Python 3
+};
+
 router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
@@ -78,6 +89,83 @@ router.post('/:chatId/messages', async (req, res) => {
   } catch (error) {
     console.error('Send message error:', error);
     res.status(500).json({ error: 'Could not send message.' });
+  }
+});
+
+// Execute code using Judge0 API
+router.post('/:chatId/execute-code', async (req, res) => {
+  const { chatId } = req.params;
+  const { code, language } = req.body;
+
+  if (!code || !code.trim()) {
+    return res.status(400).json({ error: 'Code is required.' });
+  }
+
+  if (!language || !LANGUAGE_IDS[language]) {
+    return res.status(400).json({ error: 'Unsupported language. Supported: javascript, python' });
+  }
+
+  try {
+    const chat = await Chat.findOne({ _id: chatId, participants: req.user._id });
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found.' });
+    }
+
+    // Execute code using JDoodle API
+    const executionResponse = await fetch(JDOODLE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        script: code.trim(),
+        language: LANGUAGE_IDS[language],
+        versionIndex: '0',
+        clientId: JDOODLE_CLIENT_ID,
+        clientSecret: JDOODLE_CLIENT_SECRET,
+      }),
+    });
+
+    if (!executionResponse.ok) {
+      throw new Error('Failed to execute code');
+    }
+
+    const result = await executionResponse.json();
+
+    let output = '';
+    let executionStatus = 'success';
+
+    if (result.statusCode === 200) {
+      output = result.output || '';
+    } else {
+      output = result.output || 'Execution failed';
+      executionStatus = 'error';
+    }
+
+    // Create code message
+    const message = {
+      senderId: req.user._id,
+      senderName: req.user.name,
+      from: 'me',
+      text: `Code executed (${language})`,
+      type: 'code',
+      code: code.trim(),
+      language,
+      output: output.trim(),
+      executionStatus,
+      time: formatTime(),
+    };
+
+    chat.messages.push(message);
+    chat.lastMsg = message.text;
+    chat.time = message.time;
+    chat.unread = 0;
+    await chat.save();
+
+    res.status(201).json({ message });
+  } catch (error) {
+    console.error('Execute code error:', error);
+    res.status(500).json({ error: 'Could not execute code.' });
   }
 });
 

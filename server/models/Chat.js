@@ -5,8 +5,13 @@ const messageSchema = new mongoose.Schema({
   senderName: { type: String, default: 'System' },
   from: { type: String, enum: ['me', 'them'], required: true },
   text: { type: String, default: '' },
-  type: { type: String, default: 'text' },
+  type: { type: String, default: 'text', enum: ['text', 'image', 'code'] },
   time: { type: String, default: '' },
+  // Code-specific fields
+  code: { type: String, default: '' },
+  language: { type: String, default: '' },
+  output: { type: String, default: '' },
+  executionStatus: { type: String, default: '', enum: ['', 'running', 'success', 'error'] },
   createdAt: { type: Date, default: () => new Date() },
 });
 
