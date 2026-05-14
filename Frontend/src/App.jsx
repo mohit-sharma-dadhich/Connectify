@@ -66,6 +66,13 @@ const CSS = `
     --danger: #e53e3e;
   }
 
+  html, body {
+    width: 100%;
+    min-height: 100%;
+    max-width: 100vw;
+    overscroll-behavior-x: none;
+    overflow-x: hidden;
+  }
   body { font-family: var(--font-body); background: var(--bg-app); color: var(--text-primary); }
 
   /* ---- AUTH ---- */
@@ -195,8 +202,11 @@ const CSS = `
   /* ---- LAYOUT ---- */
   .app-layout {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
+    height: 100%;
+    width: 100%;
     overflow: hidden;
+    max-width: 100vw;
   }
 
   /* ---- SIDEBAR ---- */
@@ -482,6 +492,10 @@ const CSS = `
     cursor: pointer;
   }
   .sidebar-user:hover { background: var(--bg-hover); }
+  .sidebar-user:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
   .sidebar-user .user-name {
     font-size: 13px;
     font-weight: 600;
@@ -1055,8 +1069,10 @@ const CSS = `
       position: fixed;
       top: 0;
       left: 0;
-      height: 100vh;
-      width: 270px;
+      bottom: 0;
+      height: 100%;
+      width: 100%;
+      max-width: 320px;
       transform: translateX(-100%);
       box-shadow: 12px 0 40px rgba(0,0,0,0.12);
       z-index: 30;
@@ -1065,7 +1081,7 @@ const CSS = `
     }
     .sidebar.open { transform: translateX(0); }
     .sidebar-header { padding-right: 12px; }
-    .chat-main { width: 100%; }
+    .chat-main { width: 100%; min-height: 0; }
     .mobile-backdrop {
       display: block;
       position: fixed;
@@ -1081,18 +1097,67 @@ const CSS = `
       pointer-events: auto;
     }
     .chat-header { padding: 14px 16px; gap: 12px; }
-    .chat-header-info { flex: 1; }
+    .chat-header-info { flex: 1; min-width: 0; }
     .main-menu { display: inline-flex; }
     .sidebar { width: 100%; max-width: 320px; }
     .sidebar-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 14px; }
     .nav-tab { justify-content: center; padding: 10px 12px; }
     .search-wrap { padding: 10px 14px; }
+    .search-input-wrap { padding: 10px 12px; }
+    .search-input-wrap input { font-size: 13px; }
+    .messages-wrap { padding: 18px 16px; }
     .conv-item { margin: 8px 10px; }
     .sidebar-user { padding: 12px 14px; }
     .sidebar-user-actions { display: none; }
+    .empty-state { padding: 26px 16px; }
   }
 
   @media (max-width: 640px) {
+    .sidebar { width: 100%; max-width: 100%; }
+    .chat-header { padding: 12px 14px; }
+    .messages-wrap { padding: 16px 14px; }
+    .input-area { padding: 12px 14px; }
+    .input-box { padding: 10px 12px; }
+    .send-btn { width: 42px; height: 42px; }
+    .profile-card {
+      padding: 16px;
+      gap: 14px;
+    }
+    .profile-top {
+      gap: 12px;
+    }
+    .profile-avatar {
+      width: 60px;
+      height: 60px;
+      font-size: 18px;
+    }
+    .profile-summary .profile-name { font-size: 17px; }
+    .profile-summary .profile-username { font-size: 12px; }
+    .profile-section {
+      padding: 14px;
+      gap: 12px;
+      border-radius: 16px;
+    }
+    .profile-section h3 { font-size: 13px; }
+    .profile-section p { line-height: 1.5; }
+    .profile-field-grid { gap: 12px; }
+    .profile-submit-row {
+      gap: 8px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .profile-submit-row .profile-action-btn {
+      width: auto;
+      max-width: 260px;
+      min-height: 38px;
+      padding: 0 14px;
+      font-size: 13px;
+      margin: 0 auto;
+    }
+  }
     .sidebar { width: 100%; max-width: 100%; }
     .chat-header { padding: 12px 14px; }
     .messages-wrap { padding: 18px 16px; }
@@ -1148,6 +1213,7 @@ const CSS = `
     justify-content: center;
     color: var(--text-muted);
     gap: 14px;
+    padding: 40px 0;
   }
   .empty-icon { font-size: 54px; opacity: 0.3; }
   .empty-title {
@@ -1487,6 +1553,14 @@ export default function App() {
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const openProfile = () => {
+    setNavTab('profile');
+    setProfileMode('view');
+    if (typeof window !== 'undefined' && window.innerWidth < 900) {
+      setSidebarOpen(false);
+    }
   };
 
   const changeTab = (tab) => {
@@ -1961,6 +2035,7 @@ export default function App() {
             { key:"chats", icon:<TbMessages />, label:"Chats" },
             { key:"people", icon:<TbSearch />, label:"People" },
             { key:"groups", icon:<TbUsers />, label:"Groups" },
+            { key:"profile", icon:<TbUserSearch />, label:"Profile" },
           ].map(n => (
             <button key={n.key} className={`nav-tab${navTab===n.key?" active":""}`} onClick={() => changeTab(n.key)}>
               {n.icon}
@@ -1998,14 +2073,20 @@ export default function App() {
           ))}
         </div>
 
-        <div className="sidebar-user" onClick={() => changeTab('profile')}>
+        <div
+          className="sidebar-user"
+          role="button"
+          tabIndex={0}
+          onClick={openProfile}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProfile(); } }}
+        >
           <Avatar contact={meContact} size={36} />
           <div>
             <div className="user-name">{meContact.name}</div>
             <div className="user-status">Online</div>
           </div>
           <div className="sidebar-user-actions">
-            <button className="icon-btn" onClick={(e) => { e.stopPropagation(); handleLogout(); setSelectedId(null); }}>
+            <button className="icon-btn" type="button" onClick={(e) => { e.stopPropagation(); handleLogout(); setSelectedId(null); }}>
               <TbLogout aria-hidden="true" />
             </button>
           </div>
@@ -2026,7 +2107,7 @@ export default function App() {
                 <div className="chat-header-sub">Search by username and start a private chat instantly.</div>
               </div>
             </div>
-            <div className="messages-wrap" style={{ padding: '20px 24px', gap: 14 }}>
+            <div className="messages-wrap">
               <div className="search-wrap">
                 <div className="search-input-wrap" style={{ width: '100%' }}>
                   <TbSearch className="search-icon" aria-hidden="true" />
@@ -2035,13 +2116,13 @@ export default function App() {
               </div>
 
               {peopleLoading && (
-                <div className="empty-state" style={{ padding: '40px 0' }}>
+                <div className="empty-state">
                   <div className="empty-title">Searching users...</div>
                 </div>
               )}
 
               {!peopleLoading && peopleSearch.trim() !== '' && peopleResults.length === 0 && (
-                <div className="empty-state" style={{ padding: '40px 0' }}>
+                <div className="empty-state">
                   <TbUserSearch className="empty-icon" aria-hidden="true" style={{ fontSize:48, color:'var(--text-muted)' }} />
                   <div className="empty-title">No users found</div>
                   <div className="empty-sub">Try another username or ask the person to register.</div>
@@ -2082,7 +2163,7 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <div className="messages-wrap" style={{ padding: '28px 24px', gap: 18 }}>
+            <div className="messages-wrap">
               <div className="profile-card">
                 <div className="profile-top">
                   <div className="profile-avatar">
@@ -2207,11 +2288,22 @@ export default function App() {
             </div>
           </>
         ) : !selected ? (
-          <div className="empty-state">
-            <TbMessages className="empty-icon" aria-hidden="true" style={{ fontSize:56, color:"var(--text-muted)" }} />
-            <div className="empty-title">Select a conversation</div>
-            <div className="empty-sub">Pick a chat from the sidebar to start messaging</div>
-          </div>
+          <>
+            <div className="chat-header">
+              <button className="mobile-menu-btn main-menu" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+                <TbMenu aria-hidden="true" />
+              </button>
+              <div className="chat-header-info">
+                <div className="chat-header-name">Start a conversation</div>
+                <div className="chat-header-sub">Open the sidebar to select a chat.</div>
+              </div>
+            </div>
+            <div className="empty-state">
+              <TbMessages className="empty-icon" aria-hidden="true" style={{ fontSize:56, color:"var(--text-muted)" }} />
+              <div className="empty-title">Select a conversation</div>
+              <div className="empty-sub">Pick a chat from the sidebar to start messaging</div>
+            </div>
+          </>
         ) : (
           <>
             <div className="chat-header">
