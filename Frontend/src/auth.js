@@ -129,14 +129,14 @@ export const chatAPI = {
     return data;
   },
 
-  executeCode: async (chatId, code, language, token) => {
+  executeCode: async (chatId, code, language, token, stdin = '') => {
     const response = await fetch(`${API_URL}/chats/${chatId}/execute-code`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ code, language }),
+      body: JSON.stringify({ code, language, stdin }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Failed to execute code");

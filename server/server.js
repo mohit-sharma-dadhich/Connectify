@@ -131,7 +131,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('send_code_message', async ({ chatId, code, language }, callback) => {
+  socket.on('send_code_message', async ({ chatId, code, language, stdin }, callback) => {
     if (!chatId || !code?.trim()) {
       return callback?.({ status: 'error', error: 'Chat ID and code are required.' });
     }
@@ -163,6 +163,7 @@ io.on('connection', (socket) => {
           versionIndex: '0',
           clientId: JDOODLE_CLIENT_ID,
           clientSecret: JDOODLE_CLIENT_SECRET,
+          stdin: (typeof stdin === 'string' ? stdin : '').trim(),
         }),
       });
 

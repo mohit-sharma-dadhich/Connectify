@@ -102,7 +102,7 @@ router.post('/:chatId/messages', async (req, res) => {
 // Execute code using Judge0 API
 router.post('/:chatId/execute-code', async (req, res) => {
   const { chatId } = req.params;
-  const { code, language } = req.body;
+  const { code, language, stdin } = req.body;
 
   if (!code || !code.trim()) {
     return res.status(400).json({ error: 'Code is required.' });
@@ -118,7 +118,6 @@ router.post('/:chatId/execute-code', async (req, res) => {
       return res.status(404).json({ error: 'Chat not found.' });
     }
 
-    // Execute code using JDoodle API
     const executionResponse = await fetch(JDOODLE_API_URL, {
       method: 'POST',
       headers: {
@@ -130,6 +129,7 @@ router.post('/:chatId/execute-code', async (req, res) => {
         versionIndex: '0',
         clientId: JDOODLE_CLIENT_ID,
         clientSecret: JDOODLE_CLIENT_SECRET,
+        stdin: (typeof stdin === 'string' ? stdin : '').trim(),
       }),
     });
 
@@ -138,7 +138,6 @@ router.post('/:chatId/execute-code', async (req, res) => {
     }
 
     const result = await executionResponse.json();
-
     let output = '';
     let executionStatus = 'success';
 
@@ -149,7 +148,6 @@ router.post('/:chatId/execute-code', async (req, res) => {
       executionStatus = 'error';
     }
 
-    // Create code message
     const message = {
       senderId: req.user._id,
       senderName: req.user.name,

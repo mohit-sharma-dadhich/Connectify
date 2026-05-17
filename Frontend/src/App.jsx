@@ -221,7 +221,8 @@ const CSS = `
 
   /* ---- SIDEBAR ---- */
   .sidebar {
-    width: 300px;
+    width: 340px;
+    min-width: 340px;
     flex-shrink: 0;
     background: var(--bg-sidebar);
     border-right: 1px solid var(--border);
@@ -983,7 +984,8 @@ const CSS = `
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    width: 100%;
+    width: auto;
+    max-width: 520px;
     height: 44px;
     padding: 0 16px;
     background: var(--accent);
@@ -995,7 +997,7 @@ const CSS = `
     color: #020f0c;
     transition: opacity 0.2s, transform 0.1s;
     font-family: var(--font-body);
-    margin: 20px 0 14px 0;
+    margin: 20px auto 14px;
   }
 
   .profile-card {
@@ -1154,11 +1156,13 @@ const CSS = `
   @media (min-width: 901px) {
     .mobile-menu-btn { display: none; }
     .mobile-backdrop { display: none !important; }
-    .sidebar { width: 300px !important; position: static !important; transform: none !important; max-width: 100% !important; }
+    .sidebar { width: 340px !important; min-width: 340px !important; position: static !important; transform: none !important; max-width: 100% !important; }
     .chat-main { width: auto; flex: 1; }
     .main-menu { display: none !important; }
-    .sidebar-nav { display: flex; flex-direction: column; padding: 8px 14px; gap: 4px; border-bottom: 1px solid var(--border); }
-    .nav-tab { justify-content: flex-start; padding: 7px 0; border: none; background: transparent; display: flex; flex-direction: row; align-items: center; gap: 8px; }
+    /* make the top nav horizontal on desktop and center tabs */
+    .sidebar-nav { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 8px 14px; gap: 6px; border-bottom: 1px solid var(--border); }
+    /* nav tabs show icon above label */
+    .nav-tab { justify-content: center; padding: 8px 10px; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
   }
   }
 
@@ -1574,6 +1578,7 @@ export default function App() {
   const [profileMode, setProfileMode] = useState('view');
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [codeInput, setCodeInput] = useState("");
+  const [codeInputStdin, setCodeInputStdin] = useState("");
   const [codeLanguage, setCodeLanguage] = useState("javascript");
   const [executingCode, setExecutingCode] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -1737,6 +1742,13 @@ export default function App() {
       });
       setNavTab('chats');
       setSelectedId(newChat._id);
+      try {
+        if (typeof window !== 'undefined') {
+          window.history.pushState({ view: 'chat', chatId: newChat._id }, '', `#chat-${newChat._id}`);
+        }
+      } catch (err) {
+        console.warn('History push failed', err);
+      }
       await loadMessages(newChat._id);
       showToast(`Chat opened with ${username}`);
     } catch (err) {
@@ -1869,6 +1881,32 @@ export default function App() {
     if (selectedId) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedId, messages]);
 
+  // Handle browser back button (mobile hardware back) and initial history state
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      window.history.replaceState({ view: 'home' }, '');
+    } catch (err) {
+      // ignore
+    }
+
+    const onPop = (e) => {
+      const state = e.state || {};
+      if (state.view === 'chat' && state.chatId) {
+        setSelectedId(state.chatId);
+        setNavTab('chats');
+      } else {
+        // default to chats/home
+        setSelectedId(null);
+        setNavTab('chats');
+      }
+    };
+
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   // Initialize highlight.js
   useEffect(() => {
     hljs.configure({
@@ -1925,6 +1963,13 @@ export default function App() {
 
   const handleChatSelect = async (chatId) => {
     setSelectedId(chatId);
+    try {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ view: 'chat', chatId }, '', `#chat-${chatId}`);
+      }
+    } catch (err) {
+      console.warn('History push failed', err);
+    }
     await loadMessages(chatId);
     if (typeof window !== 'undefined' && window.innerWidth < 900) {
       setSidebarOpen(false);
@@ -1990,9 +2035,25 @@ export default function App() {
     if (!token) return;
 
     setExecutingCode(true);
+    const stdinValue = codeInputStdin.trim();
+
+    if (codeLanguage === 'python' && /\binput\s*\(/.test(code) && !stdinValue) {
+      showToast('Python code using input() needs stdin. Add the input text in the Input / stdin field.');
+      setExecutingCode(false);
+      return;
+    }
+
+    if (codeLanguage === 'javascript' && /\binput\s*\(/.test(code)) {
+      showToast('JavaScript does not support Python input(). Switch the language to Python or remove input().');
+      setExecutingCode(false);
+      return;
+    }
+
+    const payload = { chatId: selectedId, code, language: codeLanguage, stdin: stdinValue };
+
     try {
       if (socket?.connected) {
-        socket.emit('send_code_message', { chatId: selectedId, code, language: codeLanguage }, (response) => {
+        socket.emit('send_code_message', payload, (response) => {
           if (response?.status === 'ok') {
             setMessages((prev) => ({
               ...prev,
@@ -2002,6 +2063,7 @@ export default function App() {
               chat._id === selectedId ? { ...chat, lastMsg: response.message.text, time: response.message.time, unread: 0 } : chat
             ));
             setCodeInput("");
+            setCodeInputStdin("");
             setShowCodeInput(false);
             setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
           } else {
@@ -2013,7 +2075,7 @@ export default function App() {
         });
       } else {
         // Fallback to HTTP API
-        const { message } = await chatAPI.executeCode(selectedId, code, codeLanguage, token);
+        const { message } = await chatAPI.executeCode(selectedId, code, codeLanguage, token, stdinValue);
         setMessages((prev) => ({
           ...prev,
           [selectedId]: [...(prev[selectedId] || []), message],
@@ -2022,6 +2084,7 @@ export default function App() {
           chat._id === selectedId ? { ...chat, lastMsg: message.text, time: message.time, unread: 0 } : chat
         ));
         setCodeInput("");
+        setCodeInputStdin("");
         setShowCodeInput(false);
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
         setExecutingCode(false);
@@ -2578,6 +2641,21 @@ export default function App() {
               onChange={e => setCodeInput(e.target.value)}
               disabled={executingCode}
             />
+            <div className="field" style={{ marginTop: 14 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontSize: 13, color: 'var(--text-secondary)' }}>Input / stdin (optional)</label>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.4 }}>
+                Add the exact input your program should receive. For multiple values, use separate lines.
+                If your Python code calls input(), this field must contain the input values.
+              </div>
+              <textarea
+                className="code-input-area"
+                placeholder="Example: Alice\n42"
+                value={codeInputStdin}
+                onChange={e => setCodeInputStdin(e.target.value)}
+                disabled={executingCode}
+                style={{ minHeight: 100 }}
+              />
+            </div>
             <div className="code-input-actions">
               <button 
                 className="profile-action-btn" 
