@@ -18,7 +18,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret123';
 
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/chats', chatsRoutes);
 
@@ -44,21 +44,27 @@ const io = new Server(httpServer, {
     credentials: true,
   },
 });
+app.set('io', io);
 
 io.use(async (socket, next) => {
   const token = socket.handshake.auth?.token;
   if (!token) {
+    console.warn('Socket auth failed: no token provided');
     return next(new Error('Authentication required'));
   }
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(payload.userId).select('-passwordHash');
-    if (!user) return next(new Error('Invalid token'));
+    if (!user) {
+      console.warn('Socket auth failed: user not found for token');
+      return next(new Error('Invalid token'));
+    }
 
     socket.data.user = user;
     next();
   } catch (error) {
+    console.error('Socket auth error:', error.message);
     next(new Error('Invalid token'));
   }
 });
@@ -289,6 +295,8 @@ io.on('connection', (socket) => {
         lastMsg: chat.lastMsg,
         time: chat.time,
         color: chat.color,
+        profilePhoto: target.profilePhoto || '',
+        participantId: target._id.toString(),
       };
 
       io.to(`user_${target._id}`).emit('chat_created', { chat: chatPayload });

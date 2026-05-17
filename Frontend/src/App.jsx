@@ -66,14 +66,23 @@ const CSS = `
     --danger: #e53e3e;
   }
 
-  html, body {
+  html, body, #root {
     width: 100%;
+    height: 100%;
     min-height: 100%;
     max-width: 100vw;
     overscroll-behavior-x: none;
     overflow-x: hidden;
+    overflow-y: hidden;
   }
-  body { font-family: var(--font-body); background: var(--bg-app); color: var(--text-primary); }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-app);
+    color: var(--text-primary);
+    min-height: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
 
   /* ---- AUTH ---- */
   .auth-wrap {
@@ -203,7 +212,8 @@ const CSS = `
   .app-layout {
     display: flex;
     min-height: 100vh;
-    height: 100%;
+    height: 100vh;
+    max-height: 100vh;
     width: 100%;
     overflow: hidden;
     max-width: 100vw;
@@ -312,7 +322,7 @@ const CSS = `
     letter-spacing: 1px;
     text-transform: uppercase;
   }
-  .conv-list { flex: 1; overflow-y: auto; padding-bottom: 8px; }
+  .conv-list { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
   .conv-list::-webkit-scrollbar { width: 3px; }
   .conv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
   .conv-item {
@@ -571,6 +581,7 @@ const CSS = `
   .chat-header-actions { display: flex; gap: 6px; }
   .messages-wrap {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 24px 24px 10px;
@@ -933,12 +944,10 @@ const CSS = `
   .send-btn:active { transform: scale(0.93); }
 
   .profile-action-btn {
-    min-width: 120px;
-    width: auto;
-    max-width: 260px;
-    min-height: 40px;
-    border-radius: 14px;
-    padding: 0 16px;
+    min-width: 140px;
+    height: 44px;
+    border-radius: 22px;
+    padding: 0 20px;
     font-size: 14px;
     font-weight: 700;
     display: inline-flex;
@@ -948,12 +957,46 @@ const CSS = `
     cursor: pointer;
     transition: opacity 0.2s, transform 0.1s;
   }
+  .profile-submit-row {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+  }
   .profile-submit-row .profile-action-btn {
     flex: 0 1 auto;
     width: auto;
   }
-  .profile-action-btn:hover { opacity: 0.9; }
-  .profile-action-btn:active { transform: scale(0.98); }
+  .profile-action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+  .profile-action-btn:active { transform: scale(0.97); }
+
+  /* Button variants for profile */
+  .profile-action-btn.btn-primary { background: var(--accent); color: #020f0c; border: none; }
+  .profile-action-btn.btn-accent { background: var(--accent); color: #020f0c; border: none; }
+  .profile-action-btn.btn-ghost { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); }
+  .profile-action-btn.btn-danger { background: var(--danger); color: #fff; border: none; }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 22px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    color: #020f0c;
+    transition: opacity 0.2s, transform 0.1s;
+    font-family: var(--font-body);
+    margin: 20px 0 14px 0;
+  }
 
   .profile-card {
     background: var(--bg-sidebar);
@@ -1059,12 +1102,8 @@ const CSS = `
   }
 
   @media (max-width: 900px) {
-    .sidebar { width: 280px; }
-    .chat-main { min-height: 0; }
-  }
-
-  @media (max-width: 900px) {
     .app-layout { position: relative; }
+    .mobile-menu-btn { display: flex; }
     .sidebar {
       position: fixed;
       top: 0;
@@ -1101,7 +1140,7 @@ const CSS = `
     .main-menu { display: inline-flex; }
     .sidebar { width: 100%; max-width: 320px; }
     .sidebar-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 14px; }
-    .nav-tab { justify-content: center; padding: 10px 12px; }
+    .nav-tab { justify-content: center; padding: 10px 12px; border: none; background: transparent; }
     .search-wrap { padding: 10px 14px; }
     .search-input-wrap { padding: 10px 12px; }
     .search-input-wrap input { font-size: 13px; }
@@ -1110,6 +1149,17 @@ const CSS = `
     .sidebar-user { padding: 12px 14px; }
     .sidebar-user-actions { display: none; }
     .empty-state { padding: 26px 16px; }
+  }
+
+  @media (min-width: 901px) {
+    .mobile-menu-btn { display: none; }
+    .mobile-backdrop { display: none !important; }
+    .sidebar { width: 300px !important; position: static !important; transform: none !important; max-width: 100% !important; }
+    .chat-main { width: auto; flex: 1; }
+    .main-menu { display: none !important; }
+    .sidebar-nav { display: flex; flex-direction: column; padding: 8px 14px; gap: 4px; border-bottom: 1px solid var(--border); }
+    .nav-tab { justify-content: flex-start; padding: 7px 0; border: none; background: transparent; display: flex; flex-direction: row; align-items: center; gap: 8px; }
+  }
   }
 
   @media (max-width: 640px) {
@@ -1225,26 +1275,8 @@ const CSS = `
   .empty-sub { font-size: 13px; color: var(--text-muted); }
 
   /* ---- THEME TOGGLE ---- */
-  .theme-toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 14px 16px;
-    background: var(--accent);
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    color: #020f0c;
-    transition: all 0.2s;
-    font-family: var(--font-body);
-    justify-content: space-between;
-  }
-  .theme-toggle:hover { opacity: 0.9; }
-  .theme-toggle:active { transform: scale(0.98); }
-  .theme-toggle i { font-size: 18px; }
+  .theme-toggle:hover { opacity: 0.85; transform: translateY(-2px); }
+  .theme-toggle:active { transform: scale(0.97); }
 
   /* ---- GROUP BADGE ---- */
   .group-avatar {
@@ -1544,9 +1576,11 @@ export default function App() {
   const [codeInput, setCodeInput] = useState("");
   const [codeLanguage, setCodeLanguage] = useState("javascript");
   const [executingCode, setExecutingCode] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const socketRef = useRef(null);
+  const selectedIdRef = useRef(selectedId);
   const BACKEND_URL = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || "http://localhost:8080";
 
   // Helper functions (must be before useEffect)
@@ -1556,16 +1590,14 @@ export default function App() {
   };
 
   const openProfile = () => {
-    setNavTab('profile');
-    setProfileMode('view');
-    if (typeof window !== 'undefined' && window.innerWidth < 900) {
-      setSidebarOpen(false);
-    }
+    changeTab('profile');
   };
 
   const changeTab = (tab) => {
     setNavTab(tab);
-    setSidebarOpen(false);
+    if (typeof window !== 'undefined' && window.innerWidth < 900) {
+      setSidebarOpen(false);
+    }
     if (tab !== 'profile') {
       setProfileMode('view');
     }
@@ -1577,7 +1609,26 @@ export default function App() {
     localStorage.setItem('app-theme', newTheme);
   };
 
+  const enterEditProfileMode = () => {
+    if (currentUser) {
+      setProfileForm({
+        name: currentUser.name,
+        username: currentUser.username,
+        profilePhoto: currentUser.profilePhoto || '',
+      });
+      setPhotoPreview(currentUser.profilePhoto || '');
+      setProfileError('');
+      setProfileMessage('');
+      setProfileMode('editProfile');
+    }
+  };
+
   const setupSocketListeners = useCallback((socket) => {
+    socket.off('disconnect');
+    socket.off('message_received');
+    socket.off('chat_updated');
+    socket.off('chat_created');
+
     socket.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
     });
@@ -1595,10 +1646,10 @@ export default function App() {
       });
       setContacts((prev) => prev.map((chat) =>
         chat._id === chatId
-          ? { ...chat, lastMsg: message.text, time: message.time, unread: chat._id === selectedId ? 0 : (chat.unread || 0) + 1 }
+          ? { ...chat, lastMsg: message.text, time: message.time, unread: chat._id === selectedIdRef.current ? 0 : (chat.unread || 0) + 1 }
           : chat
       ));
-      if (chatId === selectedId) {
+      if (chatId === selectedIdRef.current) {
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
       }
     });
@@ -1615,7 +1666,21 @@ export default function App() {
         return [chat, ...prev];
       });
     });
-  }, [selectedId]);
+
+    socket.on('profile_updated', ({ userId, profilePhoto, name, username }) => {
+      setContacts((prev) => prev.map((chat) => {
+        if (!chat.isGroup && chat.participantId === userId) {
+          return {
+            ...chat,
+            profilePhoto,
+            name,
+            role: username,
+          };
+        }
+        return chat;
+      }));
+    });
+  }, []);
 
   const socketRequest = (event, payload) => new Promise((resolve, reject) => {
     const socket = socketRef.current;
@@ -1702,16 +1767,29 @@ export default function App() {
       const chatList = await chatAPI.getChats(token);
       const filteredChats = chatList.filter((chat) => !['Priya Sharma', 'Dev Squad 🚀', 'Connectify Team'].includes(chat.name));
       setContacts(filteredChats);
-      if (filteredChats.length > 0) {
-        const firstChatId = filteredChats[0]._id;
-        setSelectedId(firstChatId);
-        await loadMessages(firstChatId);
-      }
+      // Do not auto-open a chat on load. Let user select a conversation.
+    // if (filteredChats.length > 0) {
+    //     const firstChatId = filteredChats[0]._1d;
+    //     setSelectedId(firstChatId);
+    //     await loadMessages(firstChatId);
+    // }
     } catch (err) {
       console.error('Load chats error:', err.message);
       showToast(err.message);
     }
   }, [loadMessages]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        setSidebarOpen(window.innerWidth > 900);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -1737,17 +1815,28 @@ export default function App() {
           setProfileForm({ name: profile.name, username: profile.username, profilePhoto: profile.profilePhoto || '' });
           setPhotoPreview(profile.profilePhoto || '');
           setLoggedIn(true);
+
+          if (socketRef.current) {
+            socketRef.current.off();
+            socketRef.current.disconnect();
+            socketRef.current = null;
+          }
+
           const socket = io(BACKEND_URL, {
             auth: { token },
             transports: ['websocket'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 5,
           });
           socket.on('connect', () => {
             console.log('Socket connected:', socket.id);
             showToast('Connected to live chat');
           });
           socket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error.message);
-            showToast('Live chat connection failed');
+            console.error('Socket connection error:', error.message || error);
+            console.log('Socket connection will retry or use HTTP fallback');
           });
           socketRef.current = socket;
           setupSocketListeners(socket);
@@ -1776,6 +1865,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    selectedIdRef.current = selectedId;
     if (selectedId) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedId, messages]);
 
@@ -1811,6 +1901,7 @@ export default function App() {
       setPhotoPreview(updated.profilePhoto || '');
       storage.setUser(updated);
       setProfileMessage('Profile saved successfully.');
+      setProfileMode('view');
     } catch (err) {
       setProfileError(err.message || 'Unable to update profile.');
     }
@@ -1842,10 +1933,14 @@ export default function App() {
 
   const sendMessage = async () => {
     const text = inputText.trim();
-    if (!text || !selectedId) return;
+    if (!text || !selectedId || sendingMessage) return;
+    setSendingMessage(true);
     const socket = socketRef.current;
     const token = storage.getToken();
-    if (!token) return;
+    if (!token) {
+      setSendingMessage(false);
+      return;
+    }
 
     if (socket?.connected) {
       socket.emit('send_message', { chatId: selectedId, text }, (response) => {
@@ -1864,6 +1959,7 @@ export default function App() {
           console.error('Socket send error:', message);
           showToast(message);
         }
+        setSendingMessage(false);
       });
     } else {
       try {
@@ -1880,13 +1976,15 @@ export default function App() {
       } catch (err) {
         console.error("Send message error:", err.message);
         showToast(err.message);
+      } finally {
+        setSendingMessage(false);
       }
     }
   };
 
   const sendCodeMessage = async () => {
     const code = codeInput.trim();
-    if (!code || !selectedId) return;
+    if (!code || !selectedId || executingCode) return;
     const socket = socketRef.current;
     const token = storage.getToken();
     if (!token) return;
@@ -1980,14 +2078,18 @@ export default function App() {
         const socket = io(BACKEND_URL, {
           auth: { token },
           transports: ['websocket'],
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          reconnectionAttempts: 5,
         });
         socket.on('connect', () => {
           console.log('Socket connected:', socket.id);
           showToast('Connected to live chat');
         });
         socket.on('connect_error', (error) => {
-          console.error('Socket connection error:', error.message);
-          showToast('Live chat connection failed');
+          console.error('Socket connection error:', error.message || error);
+          console.log('Socket connection will retry or use HTTP fallback');
         });
         socketRef.current = socket;
         setupSocketListeners(socket);
@@ -2207,8 +2309,8 @@ export default function App() {
                     )}
 
                     <div className="profile-submit-row">
-                      <button className="profile-action-btn btn-primary" onClick={() => setProfileMode('editProfile')}>Edit profile</button>
-                      <button className="profile-action-btn" style={{ background: 'var(--accent)', color: '#020f0c' }} onClick={() => setProfileMode('changePassword')}>Change password</button>
+                      <button className="profile-action-btn btn-primary" onClick={enterEditProfileMode}>Edit profile</button>
+                      <button className="profile-action-btn btn-accent" onClick={() => setProfileMode('changePassword')}>Change password</button>
                     </div>
                   </>
                 ) : profileMode === 'editProfile' ? (
@@ -2242,7 +2344,7 @@ export default function App() {
 
                     <div className="profile-submit-row">
                       <button className="profile-action-btn btn-primary" onClick={saveProfile}>Save profile</button>
-                      <button className="profile-action-btn" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)' }} onClick={() => setProfileMode('view')}>Cancel</button>
+                      <button className="profile-action-btn btn-ghost" onClick={() => setProfileMode('view')}>Cancel</button>
                     </div>
                   </>
                 ) : (
@@ -2281,7 +2383,7 @@ export default function App() {
                   <span>{theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}</span>
                   {theme === 'dark' ? <TbSun aria-hidden="true" /> : <TbMoon aria-hidden="true" />}
                 </button>
-                <button className="profile-action-btn" style={{ background: 'var(--danger)', color: '#fff' }} onClick={handleLogout}>
+                <button className="profile-action-btn" style={{ background: 'var(--danger)', color: '#fff', width: '100%', marginTop: '14px' }} onClick={handleLogout}>
                   Logout
                 </button>
               </div>
@@ -2295,7 +2397,7 @@ export default function App() {
               </button>
               <div className="chat-header-info">
                 <div className="chat-header-name">Start a conversation</div>
-                <div className="chat-header-sub">Open the sidebar to select a chat.</div>
+                {!sidebarOpen && <div className="chat-header-sub">Open the sidebar to select a chat.</div>}
               </div>
             </div>
             <div className="empty-state">
@@ -2446,7 +2548,7 @@ export default function App() {
                   <TbMoodSmile aria-hidden="true" />
                 </button>
               </div>
-              <button className="send-btn" onClick={sendMessage} title="Send">
+              <button className="send-btn" onClick={sendMessage} title="Send" disabled={sendingMessage || !inputText.trim()}>
                 <TbSend aria-hidden="true" />
               </button>
             </div>

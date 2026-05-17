@@ -23,19 +23,26 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     const hiddenChatNames = ['Priya Sharma', 'Dev Squad 🚀', 'Connectify Team'];
-    const chats = await Chat.find({ participants: req.user._id }).sort({ updatedAt: -1 });
+    const chats = await Chat.find({ participants: req.user._id }).sort({ updatedAt: -1 }).populate('participants', 'name username profilePhoto');
     const filtered = chats.filter(chat => !hiddenChatNames.includes(chat.name));
-    const sanitized = filtered.map(chat => ({
-      _id: chat._id,
-      name: chat.name,
-      isGroup: chat.isGroup,
-      status: chat.status,
-      role: chat.role,
-      unread: chat.unread,
-      lastMsg: chat.lastMsg,
-      time: chat.time,
-      color: chat.color,
-    }));
+    const sanitized = filtered.map(chat => {
+      const otherParticipant = !chat.isGroup
+        ? chat.participants.find((user) => user._id.toString() !== req.user._id.toString())
+        : null;
+      return {
+        _id: chat._id,
+        name: chat.name,
+        isGroup: chat.isGroup,
+        status: chat.status,
+        role: chat.role,
+        unread: chat.unread,
+        lastMsg: chat.lastMsg,
+        time: chat.time,
+        color: chat.color,
+        profilePhoto: otherParticipant?.profilePhoto || '',
+        participantId: otherParticipant?._id?.toString() || null,
+      };
+    });
     res.json(sanitized);
   } catch (error) {
     console.error('Get chats error:', error);
@@ -214,6 +221,8 @@ router.post('/private', async (req, res) => {
       lastMsg: chat.lastMsg,
       time: chat.time,
       color: chat.color,
+      profilePhoto: target.profilePhoto || '',
+      participantId: target._id.toString(),
     } });
   } catch (error) {
     console.error('Create private chat error:', error);

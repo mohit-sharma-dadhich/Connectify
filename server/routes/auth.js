@@ -91,7 +91,33 @@ router.put('/profile', authMiddleware, async (req, res) => {
     }
     await req.user.save();
 
-    res.json({ _id: req.user._id, name: req.user.name, email: req.user.email, username: req.user.username, profilePhoto: req.user.profilePhoto || '' });
+    const updatedProfile = {
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      username: req.user.username,
+      profilePhoto: req.user.profilePhoto || '',
+    };
+
+    const io = req.app?.get('io');
+    if (io) {
+      const chats = await Chat.find({ participants: req.user._id }).select('participants');
+      const updateData = {
+        userId: req.user._id.toString(),
+        profilePhoto: req.user.profilePhoto || '',
+        name: req.user.name,
+        username: req.user.username,
+      };
+      chats.forEach((chat) => {
+        chat.participants.forEach((participantId) => {
+          if (participantId.toString() !== req.user._id.toString()) {
+            io.to(`user_${participantId.toString()}`).emit('profile_updated', updateData);
+          }
+        });
+      });
+    }
+
+    res.json(updatedProfile);
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Could not update profile.' });
